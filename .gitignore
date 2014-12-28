@@ -26,7 +26,8 @@ $RECYCLE.BIN/
 .LSOverride
 
 # Icon must end with two \r
-Icon
+Icon
+
 
 # Thumbnails
 ._*
@@ -41,3 +42,15 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+
+*.log
+python/.idea/
+*/*/Release/*
+*/Release/*
+*/*/Debug/*
+*/Debug/*
+Release/*
+*.pyc
+/Debug
+/ipch
+/packages/NLog.3.1.0.0
