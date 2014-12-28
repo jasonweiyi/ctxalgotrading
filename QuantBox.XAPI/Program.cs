@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using System.Threading;
 
 namespace QuantBox.XAPI
 {
@@ -60,18 +61,25 @@ namespace QuantBox.XAPI
 
         static void Main(string[] args)
         {
-            //test_KingstarGold_Main(args);
-            test_CTP_Main(args);
+            //for (int i = 0; i < 10000; ++i)
+            {
+				test_Linux_Main(args);
+            }
+            Console.ReadKey();
         }
 
         static void test_Linux_Main(string[] args)
         {
-            //Console.WriteLine (Path.GetTempPath());
-            //return;
-            Queue queue = new Queue(@"libQuantBox_Queue.so");
+            //Queue queue = new Queue(@"libQuantBox_Queue.so");
             //Queue queue2 = new Queue(@"libQuantBox_Queue.so");
-            MarketDataApi api = new MarketDataApi(@"/home/hetao/works/QuantBox_X/QuantBox.XAPI/bin/libQuantBox_CTP_Quote.so", queue);
-            //TraderApi api2 = new TraderApi(@"C:\Program Files\SmartQuant Ltd\OpenQuant 2014\TAPI\CTP\QuantBox.C2CTP.Trade.dll", queue2);
+
+			//ApiManager.QueuePath = @"/home/hetao/works/QuantBox_XAPI/bin/Debug/libQuantBox_Queue.so";
+			//XApi api = ApiManager.CreateApi(@"/home/hetao/works/QuantBox_XAPI/bin/Debug/libQuantBox_CTP_Quote.so");
+			//XApi api2 = ApiManager.CreateApi(@"/home/hetao/works/QuantBox_XAPI/bin/Debug/libQuantBox_CTP_Trade.so");
+
+			ApiManager.QueuePath = @"libQuantBox_Queue.so";
+			XApi api = ApiManager.CreateApi(@"libQuantBox_CTP_Quote.so");
+			XApi api2 = ApiManager.CreateApi(@"libQuantBox_CTP_Trade.so");
 
             api.Server.BrokerID = "1017";
             api.Server.Address = "tcp://ctpmn1-front1.citicsf.com:51213";
@@ -82,12 +90,13 @@ namespace QuantBox.XAPI
             api.OnConnectionStatus = OnConnectionStatus;
             api.OnRtnDepthMarketData = OnRtnDepthMarketData;
 
-            /*api2.Server.BrokerID = "1017";
+            api2.Server.BrokerID = "1017";
             api2.Server.Address = "tcp://ctpmn1-front1.citicsf.com:51205";
-            api2.Server.ResumeType = ResumeType.Restart;
+			api2.Server.PrivateTopicResumeType = ResumeType.Quick;
 
             api2.User.UserID = "00000015";
             api2.User.Password = "123456";
+
 
             api2.OnConnectionStatus = OnConnectionStatus2;
             api2.OnRspQryInstrument = OnRspQryInstrument;
@@ -95,18 +104,19 @@ namespace QuantBox.XAPI
             api2.OnRspQrySettlementInfo = OnRspQrySettlementInfo;
             api2.OnRtnOrder = OnRtnOrder;
             api2.OnRtnError = OnRtnError;
-            api2.OnRtnTrade = OnRtnTrade;*/
+            api2.OnRtnTrade = OnRtnTrade;
 
             api.Connect();
-            //api2.Connect();
+           	api2.Connect();
 
-            api.Subscribe("IF1410", "");
-
-            Console.ReadKey();
+            api.Subscribe("IF1412", "");
 
             Console.ReadKey();
 
-            api.Dispose();
+			Thread.Sleep (10000);
+			Console.WriteLine (123);
+            ApiManager.ReleaseApi(api);
+            ApiManager.ReleaseApi(api2);
         }
 
 		#region LTS
@@ -114,8 +124,8 @@ namespace QuantBox.XAPI
         {
             Queue queue = new Queue(@"QuantBox_Queue.dll");
             Queue queue2 = new Queue(@"QuantBox_Queue.dll");
-            MarketDataApi api = new MarketDataApi("QuantBox_LTS_Quote.dll", queue);
-            TraderApi api2 = new TraderApi("QuantBox_C2LTS_Trade.dll", queue2);
+            XApi api = new XApi("QuantBox_LTS_Quote.dll", queue);
+            XApi api2 = new XApi("QuantBox_C2LTS_Trade.dll", queue2);
 
             api.Server.BrokerID = "2010";
             api.Server.Address = "tcp://211.144.195.163:44513";
@@ -155,37 +165,28 @@ namespace QuantBox.XAPI
         }
 		#endregion
 
-        static MarketDataApi api;
+        static XApi api;
+
         static void test_CTP_Main(string[] args)
         {
             ApiManager.QueuePath = @"C:\Program Files\SmartQuant Ltd\OpenQuant 2014\QuantBox_Queue.dll";
-            api = ApiManager.CreateApi(@"C:\Program Files\SmartQuant Ltd\OpenQuant 2014\XAPI\CTP\QuantBox_CTP_Quote.dll");
+            api = ApiManager.CreateApi(@"C:\Program Files\SmartQuant Ltd\OpenQuant 2014\XAPI\CTP\QuantBox_CTP_Trade.dll");
 
             api.Server.BrokerID = "1017";
-            api.Server.Address = "tcp://ctpmn1-front1.citicsf.com:51213";
+            api.Server.Address = "tcp://ctpmn1-front1.citicsf.com:51205";
 
             api.User.UserID = "00000015";
-            api.User.Password = "123456";
+            api.User.Password = "1234561";
 
             api.OnConnectionStatus = OnConnectionStatus;
             api.OnRtnDepthMarketData = OnRtnDepthMarketData;
 
             api.Connect();
 
-            api.Subscribe("IF1411", "");
-
-            Console.ReadKey();
-
-            Console.ReadKey();
+            Thread.Sleep(5*1000);
 
             ApiManager.ReleaseApi(api);
 
-            Console.ReadKey();
-
-            Console.ReadKey();
-
-            //api.Dispose();
-            //queue.Dispose();
         }
 
         static void test_KingstarGold_Main(string[] args)
@@ -214,9 +215,6 @@ namespace QuantBox.XAPI
             Console.ReadKey();
 
             Console.ReadKey();
-
-            //api.Dispose();
-            //queue.Dispose();
         }
     }
 }

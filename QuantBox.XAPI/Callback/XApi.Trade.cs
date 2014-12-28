@@ -7,36 +7,33 @@ using System.Threading.Tasks;
 
 namespace QuantBox.XAPI.Callback
 {
-    public class TraderApi : MarketDataApi
+    public partial class XApi
     {
-        public DelegateOnRspQryInstrument OnRspQryInstrument;
         public DelegateOnRspQryTradingAccount OnRspQryTradingAccount;
+        public DelegateOnRspQryInvestorPosition OnRspQryInvestorPosition;
         public DelegateOnRspQrySettlementInfo OnRspQrySettlementInfo;
         public DelegateOnRtnOrder OnRtnOrder;
         public DelegateOnRtnTrade OnRtnTrade;
+        public DelegateOnRtnQuote OnRtnQuote;
 
         private Dictionary<string, StringBuilder> dict = new Dictionary<string, StringBuilder>();
-        internal TraderApi(string path1, Queue queue)
-            : base(path1, queue)
-        {
-        }
-
-        public void ReqQryInstrument(string szInstrument, string szExchange)
-        {
-            IntPtr szInstrumentPtr = Marshal.StringToHGlobalAnsi(szInstrument);
-            IntPtr szExchangePtr = Marshal.StringToHGlobalAnsi(szExchange);
-
-            proxy.XRequest((byte)RequestType.ReqQryInstrument, Handle, IntPtr.Zero, 0, 0,
-                szInstrumentPtr, 0, szExchangePtr, 0, IntPtr.Zero, 0);
-
-            Marshal.FreeHGlobal(szInstrumentPtr);
-            Marshal.FreeHGlobal(szExchangePtr);
-        }
 
         public void ReqQryTradingAccount()
         {
             proxy.XRequest((byte)RequestType.ReqQryTradingAccount, Handle, IntPtr.Zero, 0, 0,
                 IntPtr.Zero, 0, IntPtr.Zero, 0, IntPtr.Zero, 0);
+        }
+
+        public void ReqQryInvestorPosition(string szInstrument, string szExchange)
+        {
+            IntPtr szInstrumentPtr = Marshal.StringToHGlobalAnsi(szInstrument);
+            IntPtr szExchangePtr = Marshal.StringToHGlobalAnsi(szExchange);
+
+            proxy.XRequest((byte)RequestType.ReqQryInvestorPosition, Handle, IntPtr.Zero, 0, 0,
+                szInstrumentPtr, 0, szExchangePtr, 0, IntPtr.Zero, 0);
+
+            Marshal.FreeHGlobal(szInstrumentPtr);
+            Marshal.FreeHGlobal(szExchangePtr);
         }
 
         public void ReqQrySettlementInfo(string szTradingDay)
@@ -51,7 +48,7 @@ namespace QuantBox.XAPI.Callback
             Marshal.FreeHGlobal(szTradingDayPtr);
         }
 
-        public string SendOrder(int OrderRef, ref OrderField order1, ref ulong ret)
+        public string SendOrder(int OrderRef, ref OrderField order1)
         {
             int size = Marshal.SizeOf(typeof(OrderField));
 
@@ -73,7 +70,7 @@ namespace QuantBox.XAPI.Callback
             return Marshal.PtrToStringAnsi(ptr);
         }
 
-        public string SendOrder(int OrderRef, ref OrderField order1, ref OrderField order2, ref ulong ret)
+        public string SendOrder(int OrderRef, ref OrderField order1, ref OrderField order2)
         {
             int size = Marshal.SizeOf(typeof(OrderField));
 
@@ -107,69 +104,35 @@ namespace QuantBox.XAPI.Callback
             return ptr.ToInt32();
         }
 
-        public string SendQuote(ref OrderField order1, ref OrderField order2)
+        public string SendQuote(int QuoteRef, ref QuoteField quote)
         {
-            int size = Marshal.SizeOf(typeof(OrderField));
+            int size = Marshal.SizeOf(typeof(QuoteField));
 
-            IntPtr order1Ptr = Marshal.AllocHGlobal(size);
-            IntPtr order2Ptr = Marshal.AllocHGlobal(size);
-            Marshal.StructureToPtr(order1, order1Ptr, false);
-            Marshal.StructureToPtr(order2, order2Ptr, false);
+            IntPtr quotePtr = Marshal.AllocHGlobal(size);
+            Marshal.StructureToPtr(quote, quotePtr, false);
 
-            proxy.XRequest((byte)RequestType.ReqQuoteInsert, Handle, IntPtr.Zero, 0, 0,
-                IntPtr.Zero, 0, IntPtr.Zero, 0, IntPtr.Zero, 0);
+            IntPtr ptr = proxy.XRequest((byte)RequestType.ReqQuoteInsert, Handle, IntPtr.Zero,
+                QuoteRef, 0,
+                quotePtr, size, IntPtr.Zero, 0, IntPtr.Zero, 0);
 
-            Marshal.FreeHGlobal(order1Ptr);
-            Marshal.FreeHGlobal(order2Ptr);
+            Marshal.FreeHGlobal(quotePtr);
 
-            return string.Empty;
+            if (ptr.ToInt64() == 0)
+                return null;
+
+            return Marshal.PtrToStringAnsi(ptr);
         }
 
-        public void CancelQuote(string szId)
+        public int CancelQuote(string szId)
         {
             IntPtr szIdPtr = Marshal.StringToHGlobalAnsi(szId);
 
-            proxy.XRequest((byte)RequestType.ReqQuoteAction, Handle, IntPtr.Zero, 0, 0,
+            IntPtr ptr = proxy.XRequest((byte)RequestType.ReqQuoteAction, Handle, IntPtr.Zero, 0, 0,
                 szIdPtr, 0, IntPtr.Zero, 0, IntPtr.Zero, 0);
 
             Marshal.FreeHGlobal(szIdPtr);
-        }
 
-        protected override IntPtr OnRespone(byte type, IntPtr pApi1, IntPtr pApi2, double double1, double double2, IntPtr ptr1, int size1, IntPtr ptr2, int size2, IntPtr ptr3, int size3)
-        {
-            switch ((ResponeType)type)
-            {
-                case ResponeType.OnRspQryInstrument:
-                    _OnRspQryInstrument(ptr1,size1, double1);
-                    break;
-                case ResponeType.OnRspQryTradingAccount:
-                    _OnRspQryTradingAccount(ptr1, size1, double1);
-                    break;
-                case ResponeType.OnRspQrySettlementInfo:
-                    _OnRspQrySettlementInfo(ptr1, size1, double1);
-                    break;
-                case ResponeType.OnRtnOrder:
-                    _OnRtnOrder(ptr1, size1);
-                    break;
-                case ResponeType.OnRtnTrade:
-                    _OnRtnTrade(ptr1, size1);
-                    break;
-                default:
-                    base.OnRespone(type, pApi1, pApi2, double1, double2, ptr1, size1, ptr2, size2, ptr3, size3);
-                    break;
-            }
-
-            return IntPtr.Zero;
-        }
-
-        private void _OnRspQryInstrument(IntPtr ptr1,int size1, double double1)
-        {
-            if (OnRspQryInstrument == null)
-                return;
-
-            InstrumentField obj = PInvokeUtility.GetObjectFromIntPtr<InstrumentField>(ptr1);
-
-            OnRspQryInstrument(this, ref obj, size1, double1 != 0);
+            return ptr.ToInt32();
         }
 
         private void _OnRspQryTradingAccount(IntPtr ptr1, int size1, double double1)
@@ -180,6 +143,16 @@ namespace QuantBox.XAPI.Callback
             AccountField obj = PInvokeUtility.GetObjectFromIntPtr<AccountField>(ptr1);
 
             OnRspQryTradingAccount(this, ref obj, size1, double1 != 0);
+        }
+
+        private void _OnRspQryInvestorPosition(IntPtr ptr1, int size1, double double1)
+        {
+            if (OnRspQryInvestorPosition == null)
+                return;
+
+            PositionField obj = PInvokeUtility.GetObjectFromIntPtr<PositionField>(ptr1);
+
+            OnRspQryInvestorPosition(this, ref obj, size1, double1 != 0);
         }
 
         private void _OnRspQrySettlementInfo(IntPtr ptr1, int size1, double double1)
@@ -210,6 +183,16 @@ namespace QuantBox.XAPI.Callback
             TradeField obj = PInvokeUtility.GetObjectFromIntPtr<TradeField>(ptr1);
 
             OnRtnTrade(this, ref obj);
+        }
+
+        private void _OnRtnQuote(IntPtr ptr1, int size1)
+        {
+            if (OnRtnQuote == null)
+                return;
+
+            QuoteField obj = PInvokeUtility.GetObjectFromIntPtr<QuoteField>(ptr1);
+
+            OnRtnQuote(this, ref obj);
         }
     }
 }

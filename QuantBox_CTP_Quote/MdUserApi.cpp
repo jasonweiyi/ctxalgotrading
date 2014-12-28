@@ -368,6 +368,7 @@ void CMdUserApi::OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMark
 
 	strcpy(marketData.Symbol, pDepthMarketData->InstrumentID);
 
+	//TODO:CTP大连没有ActionDay，所以API中是将TradingDay填到了这里，所以这里这种用法可能会出错，要测
 	GetExchangeTime(pDepthMarketData->TradingDay,pDepthMarketData->ActionDay,pDepthMarketData->UpdateTime
 		,&marketData.TradingDay,&marketData.ActionDay,&marketData.UpdateTime);
 	marketData.UpdateMillisec = pDepthMarketData->UpdateMillisec;
@@ -445,6 +446,7 @@ void CMdUserApi::OnRspUnSubForQuoteRsp(CThostFtdcSpecificInstrumentField *pSpeci
 
 void CMdUserApi::OnRtnForQuoteRsp(CThostFtdcForQuoteRspField *pForQuoteRsp)
 {
+	// 上期技术的人说，上海中金走的交易接口，大商，郑商走行情，所以这个地方后期可能要改
 	QuoteRequestField field = { 0 };
 
 	strcpy(field.Symbol, pForQuoteRsp->InstrumentID);

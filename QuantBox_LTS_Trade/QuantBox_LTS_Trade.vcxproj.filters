@@ -13,8 +13,8 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="lib">
-      <UniqueIdentifier>{d78e75ed-cfc4-4b24-8b16-31b0573c1899}</UniqueIdentifier>
+    <Filter Include="include">
+      <UniqueIdentifier>{7686464a-38f3-4dd5-89a6-f64cb61281a5}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -36,6 +36,15 @@
     <ClInclude Include="..\include\toolkit.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\LTS\SecurityFtdcTraderApi.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\LTS\SecurityFtdcUserApiDataType.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\LTS\SecurityFtdcUserApiStruct.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -56,13 +65,5 @@
     <ClCompile Include="..\include\toolkit.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <Library Include="..\lib\QuantBox_Queue.lib">
-      <Filter>lib</Filter>
-    </Library>
-    <Library Include="..\include\LTS\win32\securitytraderapi.lib">
-      <Filter>lib</Filter>
-    </Library>
   </ItemGroup>
 </Project>

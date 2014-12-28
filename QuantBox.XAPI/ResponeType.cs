@@ -17,6 +17,10 @@ namespace QuantBox.XAPI
         OnRspQrySettlementInfo,
         OnRtnOrder,
         OnRtnTrade,
+        OnRtnQuote,
         OnRtnQuoteRequest,
+
+        OnRspQryHistoricalTicks,
+        OnRspQryHistoricalBars,
     }
 }

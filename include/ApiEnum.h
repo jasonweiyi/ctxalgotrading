@@ -27,9 +27,11 @@ enum ApiType :char
 	MarketData = 2,
 	Level2 = 4,
 	QuoteRequest = 8,
+	HistoricalData = 16,
+	Instrument = 32,
 };
 
-enum DataLevelType:char
+enum DepthLevelType:char
 {
 	L0,
 	L1,
@@ -147,4 +149,24 @@ enum InstrumentType :char
 	Synthetic,
 };
 
+enum BarType :char
+{
+	Time,
+	Tick,
+	Volume,
+	Range,
+};
+
+enum DataObjetType : char
+{
+	Tick_,
+	Bid,
+	Ask,
+	Trade_,
+	Quote,
+	Bar,
+	Level2_,
+	Level2Snapshot,
+	Level2Update,
+};
 #endif

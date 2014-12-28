@@ -7,14 +7,55 @@
 
 struct PositionField
 {
-	InstrumentIDType InstrumentID;
+	///唯一符号
+	SymbolType			Symbol;
+	///合约代码
+	InstrumentIDType	InstrumentID;
+	///交易所代码
 	ExchangeIDType	ExchangeID;
+
 	PositionSide	Side;
 	QtyType Position;
 	QtyType TdPosition;
 	QtyType YdPosition;
 	HedgeFlagType HedgeFlag;
 	//TThostFtdcPositionDateType 还没处理
+};
+
+struct QuoteField
+{
+	InstrumentIDType InstrumentID;
+	ExchangeIDType	ExchangeID;
+
+	QtyType AskQty;
+	PriceType AskPrice;
+	OpenCloseType AskOpenClose;
+	HedgeFlagType AskHedgeFlag;
+
+	QtyType BidQty;
+	PriceType BidPrice;
+	OpenCloseType BidOpenClose;
+	HedgeFlagType BidHedgeFlag;
+
+	OrderIDType ID;
+	OrderIDType AskID;
+	OrderIDType BidID;
+	OrderIDType AskOrderID;
+	OrderIDType BidOrderID;
+	OrderStatus Status;
+	ExecType ExecType;
+	ErrorIDType ErrorID;
+	ErrorMsgType Text;
+
+	/*
+	QtyType LeavesQty;
+	QtyType CumQty;
+	PriceType AvgPx;
+	
+
+	
+	
+	long DateTime;*/
 };
 
 struct OrderField
@@ -42,12 +83,6 @@ struct OrderField
 	OrderIDType ID;
 	OrderIDType OrderID;
 	long DateTime;
-	//// 预留字段，支持bool,int,long,double
-	//double double1;
-	//double double2;
-	//// 是否要进行扩展属性的支持？
-	//void* ptr1;
-	//// 是否需要从底层传入更多信息，比如说OrderSysID
 };
 
 struct TradeField
@@ -71,7 +106,11 @@ struct ServerInfoField
 	bool IsUsingUdp;
 	bool IsMulticast;
 	int	TopicId;
-	ResumeType	Resume;
+	int Port;
+	ResumeType	MarketDataTopicResumeType;
+	ResumeType	PrivateTopicResumeType;
+	ResumeType	PublicTopicResumeType;
+	ResumeType	UserTopicResumeType;
 	BrokerIDType	BrokerID;
 	ProductInfoType	UserProductInfo;
 	AuthCodeType	AuthCode;
@@ -213,7 +252,48 @@ struct DepthMarketDataField
 	VolumeType	AskVolume5;
 };
 
+///Tick行情
+struct TickField
+{
+	///交易所时间
+	DateIntType			Date;
+	TimeIntType			Time;
+	TimeIntType			Millisecond;
 
+	PriceType	LastPrice;
+	///数量
+	LargeVolumeType	Volume;
+	///持仓量
+	LargeVolumeType	OpenInterest;
+	PriceType	BidPrice1;
+	PriceType	AskPrice1;
+	VolumeType	BidSize1;
+	VolumeType	AskSize1;
+};
+
+
+///Bar行情
+struct BarField
+{
+	///交易所时间
+	DateIntType			Date;
+	TimeIntType			Time;
+
+	///开
+	PriceType	Open;
+	///高
+	PriceType	High;
+	///低
+	PriceType	Low;
+	///收
+	PriceType	Close;
+	///数量
+	LargeVolumeType	Volume;
+	///持仓量
+	LargeVolumeType	OpenInterest;
+	///成交金额
+	MoneyType	Turnover;
+};
 
 ///发给做市商的询价请求
 struct QuoteRequestField
@@ -267,8 +347,6 @@ struct AccountField
 	MoneyType	PreBalance;
 	///当前保证金总额
 	MoneyType	CurrMargin;
-	///手续费
-	MoneyType	Commission;
 	///平仓盈亏
 	MoneyType	CloseProfit;
 	///持仓盈亏
@@ -277,6 +355,30 @@ struct AccountField
 	MoneyType	Balance;
 	///可用资金
 	MoneyType	Available;
+
+	///入金金额
+	MoneyType	Deposit;
+	///出金金额
+	MoneyType	Withdraw;
+
+	///冻结的过户费
+	MoneyType	FrozenTransferFee;
+	///冻结的印花税
+	MoneyType	FrozenStampTax;
+	///冻结的手续费
+	MoneyType	FrozenCommission;
+	///冻结的资金
+	MoneyType	FrozenCash;
+
+	///过户费
+	MoneyType	TransferFee;
+	///印花税
+	MoneyType	StampTax;
+	///手续费
+	MoneyType	Commission;
+	///资金差额
+	MoneyType	CashIn;
+
 };
 
 ///账号
@@ -286,5 +388,28 @@ struct SettlementInfoField
 	DateType	TradingDay;
 	///消息正文
 	ContentType	Content;
+};
+
+struct HistoricalDataRequestField
+{
+	///唯一符号
+	SymbolType			Symbol;
+	///合约代码
+	InstrumentIDType	InstrumentID;
+	///交易所代码
+	ExchangeIDType	ExchangeID;
+
+	int Date1;
+	int Date2;
+	int Time1;
+	int Time2;
+
+	DataObjetType DataType;
+	BarType BarType;
+	long BarSize;
+
+	int RequestId;
+	int CurrentDate;
+	int lRequest;
 };
 #endif

@@ -1,23 +1,17 @@
 #include "stdafx.h"
 #include "TypeConvert.h"
 
-
+#include <string.h>
 /// 类似于OpenQuant FIX一样的效果，插件层简单，基本不要做怎么计算或处理
 /// 对于一个单子的某个状态可能是这样的，新单，部分成交，完全成交
 /// EmitAccept,EmitFill
 /// OnRtnOrder,OnRtnTrade,如何转成Emit
 /// EmitAccept是什么
-/// 
+///
 /// 接口向外提供的回报可以分两种方案，ExecutionReport或委托回报与成交回报
 /// OpenQuant中使用ExecutionReport问题是因为OQ自己有OrderManager，如果其它软件要看到委托和成交列表是没法得到的
 /// 所以接口应当返回委托与成交回报
 
-//PutCall TSecurityFtdcOptionsTypeType_2_PutCall(TSecurityFtdcOptionsTypeType In)
-//{
-//	if (In == SECURITY_FTDC_CP_CallOptions)
-//		return PutCall::Call;
-//	return PutCall::Put;
-//}
 
 HedgeFlagType TSecurityFtdcHedgeFlagType_2_HedgeFlagType(TSecurityFtdcHedgeFlagType In)
 {
@@ -93,6 +87,23 @@ PositionSide TSecurityFtdcPosiDirectionType_2_PositionSide(TSecurityFtdcPosiDire
 {
 	if (In == SECURITY_FTDC_PD_Short)
 		return PositionSide::Short;
+	return PositionSide::Long;
+}
+
+PositionSide TradeField_2_PositionSide(TradeField* pIn)
+{
+	//if (pIn->OpenClose == OpenCloseType::Open)
+	//{
+	//	if (pIn->Side == OrderSide::Buy)
+	//		return PositionSide::Long;
+	//	return PositionSide::Short;
+	//}
+	//else
+	//{
+	//	if (pIn->Side == OrderSide::Buy)
+	//		return PositionSide::Short;
+	//	return PositionSide::Long;
+	//}
 	return PositionSide::Long;
 }
 
@@ -210,6 +221,36 @@ InstrumentType CSecurityFtdcInstrumentField_2_InstrumentType(CSecurityFtdcInstru
 	//case SECURITY_FTDC_PC_SpotOption:
 	//	return InstrumentType::Option;
 	default:
+		if (strlen(pIn->InstrumentID) == 8)
+		{
+			return InstrumentType::Option;
+		}
 		return InstrumentType::Stock;
 	}
+}
+
+PutCall CSecurityFtdcInstrumentField_2_PutCall(CSecurityFtdcInstrumentField* pIn)
+{
+	if (strlen(pIn->InstrumentID) == 8)
+	{
+		if (pIn->ExchangeInstID[6] == 'C')
+		{
+			return PutCall::Call;
+		}
+	}
+	return PutCall::Put;
+}
+
+PriceType CSecurityFtdcInstrumentField_2_PriceTick(CSecurityFtdcInstrumentField* pIn)
+{
+	if (pIn->PriceTick != 0)
+		return pIn->PriceTick;
+
+	// 期权为0.001
+	if (strlen(pIn->InstrumentID) == 8)
+	{
+		return 0.001;
+	}
+
+	return 0.01;
 }

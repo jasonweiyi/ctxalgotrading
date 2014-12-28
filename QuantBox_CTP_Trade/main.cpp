@@ -14,11 +14,11 @@ void* __stdcall XRequest(char type, void* pApi1, void* pApi2, double double1, do
 	switch (rt)
 	{
 	case GetApiType:
-		return (void*)(ApiType::Trade);
+		return (void*)(ApiType::Trade | ApiType::Instrument);
 	case GetApiVersion:
-		return "0.1";
+		return (void*)"0.2";
 	case GetApiName:
-		return "CTP";
+		return (void*)"CTP";
 	case Create:
 		return new CTraderApi();
 	default:
@@ -49,6 +49,9 @@ void* __stdcall XRequest(char type, void* pApi1, void* pApi2, double double1, do
 	case ReqQryInstrument:
 		pApi->ReqQryInstrument((const char*)ptr1, (const char*)ptr2);
 		break;
+	case ReqQryInvestorPosition:
+		pApi->ReqQryInvestorPosition((const char*)ptr1, (const char*)ptr2);
+		break;
 	case ReqQryTradingAccount:
 		pApi->ReqQryTradingAccount();
 		break;
@@ -65,10 +68,11 @@ void* __stdcall XRequest(char type, void* pApi1, void* pApi2, double double1, do
 			return pApi->ReqParkedOrderInsert((int)double1, (OrderField*)ptr1, (OrderField*)ptr2);
 		}
 	case ReqQuoteInsert:
-		return pApi->ReqQuoteInsert((int)double1, (OrderField*)ptr1, (OrderField*)ptr2);
+		return pApi->ReqQuoteInsert((int)double1, (QuoteField*)ptr1);
 	case ReqOrderAction:
 		return (void*)pApi->ReqOrderAction((const char*)ptr1);
-		break;
+	case ReqQuoteAction:
+		return (void*)pApi->ReqQuoteAction((const char*)ptr1);
 	default:
 		break;
 	}
