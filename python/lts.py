@@ -3,7 +3,7 @@ __author__ = 'Chunyou'
 
 from base_api.api_manager import *
 
-os.environ['PATH'] = ';'.join([os.path.dirname(__file__) + "\\..\\Debug",
+os.environ['PATH'] = ';'.join([os.path.dirname(__file__) + "\\include",
                                os.path.dirname(__file__) + "\\include\\LTS\\win32",
                                os.environ['PATH']])
 
