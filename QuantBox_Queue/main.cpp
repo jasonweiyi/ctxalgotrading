@@ -55,7 +55,7 @@ void* __stdcall XRequest(char type, void* pApi1, void* pApi2, double double1, do
 		pQueue->Clear();
 		break;
 	case Process:
-		pQueue->Process();
+		return pQueue->Process() ? pApi1 : nullptr;
 		break;
 	default:
 		break;

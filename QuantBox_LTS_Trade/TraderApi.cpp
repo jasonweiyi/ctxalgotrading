@@ -492,7 +492,7 @@ char* CTraderApi::ReqOrderInsert(
 	strncpy(body.BrokerID, m_RspUserLogin.BrokerID, sizeof(TSecurityFtdcBrokerIDType));
 	strncpy(body.InvestorID, m_RspUserLogin.UserID, sizeof(TSecurityFtdcInvestorIDType));
 
-	body.MinVolume = 1;
+	body.MinVolume = 100;
 	body.ForceCloseReason = SECURITY_FTDC_FCC_NotForceClose;
 	body.IsAutoSuspend = 0;
 	body.UserForceClose = 0;

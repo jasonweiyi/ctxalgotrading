@@ -131,6 +131,16 @@ TradeIDType是一个成交编号类型
 TradeIDType = c_char * 64
 
 """
+PositionIDType是一个持仓编号类型
+"""
+PositionIDType = c_char * 64
+
+"""
+BarSizeType是一个BarSize类型
+"""
+BarSizeType = c_long
+
+"""
 连接状态枚举
 """
 ConnectionStatus = c_char
@@ -175,17 +185,21 @@ Level2 = ApiType(b'\x04')
 
 QuoteRequest = ApiType(b'\x08')
 
-DataLevelType = c_char
+HistoricalData = ApiType(chr(16))
 
-L0 = DataLevelType(b'\x00')
+Instrument = ApiType(chr(32))
 
-L1 = DataLevelType(b'\x01')
+DepthLevelType = c_char
 
-L5 = DataLevelType(b'\x02')
+L0 = DepthLevelType(b'\x00')
 
-L10 = DataLevelType(b'\x03')
+L1 = DepthLevelType(b'\x01')
 
-FULL = DataLevelType(b'\x04')
+L5 = DepthLevelType(b'\x02')
+
+L10 = DepthLevelType(b'\x03')
+
+FULL = DepthLevelType(b'\x04')
 
 ResumeType = c_char
 
@@ -335,9 +349,29 @@ MultiLeg = InstrumentType(b'\x08')
 
 Synthetic = InstrumentType(b'\t')
 
+BarType = c_char
+
+Time = BarType(b'\x00')
+Tick = BarType(b'\x01')
+Volume = BarType(b'\x02')
+Range = BarType(b'\x03')
+
+DataObjetType = c_char
+
+Tick_ = DataObjetType(chr(0))
+Bid = DataObjetType(chr(2))
+Ask = DataObjetType(chr(3))
+Trade_ = DataObjetType(chr(4))
+Quote = DataObjetType(chr(5))
+Bar = DataObjetType(chr(6))
+Level2_ = DataObjetType(chr(7))
+Level2Snapshot = DataObjetType(chr(8))
+Level2Update = DataObjetType(chr(9))
+
 
 class PositionField(Structure):
     _fields_ = [
+        ("Symbol", SymbolType),
         ("InstrumentID", InstrumentIDType),
         ("ExchangeID", ExchangeIDType),
         ("Side", PositionSide),
@@ -345,6 +379,32 @@ class PositionField(Structure):
         ("TdPosition", QtyType),
         ("YdPosition", QtyType),
         ("HedgeFlag", HedgeFlagType)]
+
+
+class QuoteField(Structure):
+    _fields_ = [
+        ("InstrumentID", InstrumentIDType),
+        ("ExchangeID", ExchangeIDType),
+
+        ("AskQty", QtyType),
+        ("AskPrice", PriceType),
+        ("AskOpenClose", OpenCloseType),
+        ("AskHedgeFlag", HedgeFlagType),
+
+        ("BidQty", QtyType),
+        ("BidPrice", PriceType),
+        ("BidOpenClose", OpenCloseType),
+        ("BidHedgeFlag", HedgeFlagType),
+
+        ("ID", OrderIDType),
+        ("AskID", OrderIDType),
+        ("BidID", OrderIDType),
+        ("AskOrderID", OrderIDType),
+        ("BidOrderID", OrderIDType),
+        ("Status", OrderStatus),
+        ("ExecType", ExecType),
+        ("ErrorID", ErrorIDType),
+        ("Text", ErrorMsgType)]
 
 
 class OrderField(Structure):
@@ -372,12 +432,6 @@ class OrderField(Structure):
         ("ID", OrderIDType),
         ("OrderID", OrderIDType),
         ("DateTime", c_long)
-        # # 预留字段，支持bool,int,long,double
-        # ("double1", double),
-        # ("double2", double),
-        # # 是否要进行扩展属性的支持？
-        # void* ptr1;
-        ## 是否需要从底层传入更多信息，比如说OrderSysID
     ]
 
 
@@ -402,7 +456,11 @@ class ServerInfoField(Structure):
         ("IsUsingUdp", c_bool),
         ("IsMulticast", c_bool),
         ("TopicId", c_int),
-        ("Resume", ResumeType),
+        ("Port", c_int),
+        ("MarketDataTopicResumeType", ResumeType),
+        ("PrivateTopicResumeType", ResumeType),
+        ("PublicTopicResumeType", ResumeType),
+        ("UserTopicResumeType", ResumeType),
         ("BrokerID", BrokerIDType),
         ("UserProductInfo", ProductInfoType),
         ("AuthCode", AuthCodeType),
@@ -462,30 +520,30 @@ class DepthMarketDataField(Structure):
         # /交易所代码
         ("ExchangeID", ExchangeIDType),
 
-        #/最新价
+        # /最新价
         ("LastPrice", PriceType),
-        #/数量
+        # /数量
         ("Volume", LargeVolumeType),
-        #/成交金额
+        # /成交金额
         ("Turnover", MoneyType),
-        #/持仓量
+        # /持仓量
         ("OpenInterest", LargeVolumeType),
-        #/当日均价
+        # /当日均价
         ("AveragePrice", PriceType),
 
 
-        #/今开盘
+        # /今开盘
         ("OpenPrice", PriceType),
-        #/最高价
+        # /最高价
         ("HighestPrice", PriceType),
-        #/最低价
+        # /最低价
         ("LowestPrice", PriceType),
-        #/今收盘
+        # /今收盘
         ("ClosePrice", PriceType),
-        #/本次结算价
+        # /本次结算价
         ("SettlementPrice", PriceType),
 
-        #/涨停板价
+        # /涨停板价
         ("UpperLimitPrice", PriceType),
         #/跌停板价
         ("LowerLimitPrice", PriceType),
@@ -539,6 +597,47 @@ class DepthMarketDataField(Structure):
         ("AskVolume5", VolumeType)]
 
 
+# Tick行情
+class TickField(Structure):
+    _fields_ = [
+        # 交易所时间
+        ("Date", DateIntType),
+        ("Time", TimeIntType),
+        ("Millisecond", TimeIntType),
+
+        ("LastPrice", PriceType),
+        # 数量
+        ("Volume", LargeVolumeType),
+        # 持仓量
+        ("OpenInterest", LargeVolumeType),
+        ("BidPrice1", PriceType),
+        ("AskPrice1", PriceType),
+        ("BidSize1", VolumeType),
+        ("AskSize1", VolumeType)]
+
+
+# Bar行情
+class BarField(Structure):
+    _fields_ = [
+        # 交易所时间
+        ("Date", DateIntType),
+        ("Time", TimeIntType),
+        # 开
+        ("Open", PriceType),
+        # 高
+        ("High", PriceType),
+        # 低
+        ("Low", PriceType),
+        # 收
+        ("Close", PriceType),
+        # 数量
+        ("Volume", LargeVolumeType),
+        # 持仓量
+        ("OpenInterest", LargeVolumeType),
+        # 成交金额
+        ("Turnover", MoneyType)]
+
+
 # /发给做市商的询价请求
 class QuoteRequestField(Structure):
     _fields_ = [
@@ -548,11 +647,11 @@ class QuoteRequestField(Structure):
         ("InstrumentID", InstrumentIDType),
         # /交易所代码
         ("ExchangeID", ExchangeIDType),
-        #/交易日
+        # /交易日
         ("TradingDay", DateType),
-        #/询价编号
+        # /询价编号
         ("QuoteID", OrderIDType),
-        #/询价时间
+        # /询价时间
         ("QuoteTime", TimeType)]
 
 
@@ -563,53 +662,91 @@ class InstrumentField(Structure):
         ("Symbol", SymbolType),
         # /合约代码
         ("InstrumentID", InstrumentIDType),
-        #/交易所代码
+        # /交易所代码
         ("ExchangeID", ExchangeIDType),
-        #/合约名称
+        # /合约名称
         ("InstrumentName", InstrumentNameType),
 
-        #/合约名称
+        # /合约名称
         ("Type", InstrumentType),
-        #/合约数量乘数
+        # /合约数量乘数
         ("VolumeMultiple", VolumeMultipleType),
-        #/最小变动价位
+        # /最小变动价位
         ("PriceTick", PriceType),
-        #/到期日
+        # /到期日
         ("ExpireDate", DateType),
-        #/基础商品代码
+        # /基础商品代码
         ("UnderlyingInstrID", InstrumentIDType),
-        #/执行价
+        # /执行价
         ("StrikePrice", PriceType),
-        #/期权类型
+        # /期权类型
         ("OptionsType", PutCall)]
 
 
 # /账号
 class AccountField(Structure):
     _fields_ = [
-        # /上次结算准备金
+        # 上次结算准备金
         ("PreBalance", MoneyType),
-        #/当前保证金总额
+        # 当前保证金总额
         ("CurrMargin", MoneyType),
-        #/手续费
-        ("Commission", MoneyType),
-        #/平仓盈亏
+        # 平仓盈亏
         ("CloseProfit", MoneyType),
-        #/持仓盈亏
+        # 持仓盈亏
         ("PositionProfit", MoneyType),
-        #/期货结算准备金
+        # 期货结算准备金
         ("Balance", MoneyType),
-        #/可用资金
-        ("Available", MoneyType)]
+        # 可用资金
+        ("Available", MoneyType),
+        # 入金金额
+        ("Deposit", MoneyType),
+        # 出金金额
+        ("Withdraw", MoneyType),
+        # 冻结的过户费
+        ("FrozenTransferFee", MoneyType),
+        # 冻结的印花税
+        ("FrozenStampTax", MoneyType),
+        # 冻结的手续费
+        ("FrozenCommission", MoneyType),
+        # 冻结的资金
+        ("FrozenCash", MoneyType),
+        # 过户费
+        ("TransferFee", MoneyType),
+        # 印花税
+        ("StampTax", MoneyType),
+        # 手续费
+        ("Commission", MoneyType),
+        # 资金差额
+        ("CashIn", MoneyType)]
 
 
 # /账号
 class SettlementInfoField(Structure):
     _fields_ = [
-        #/交易日
+        # /交易日
         ("TradingDay", DateType),
-        #/消息正文
+        # /消息正文
         ("Content", ContentType)]
+
+
+class HistoricalDataRequestField(Structure):
+    _fields_ = [
+        ("Symbol", SymbolType),  # 唯一符号
+        ("InstrumentID", InstrumentIDType),  # 合约代码
+        ("ExchangeID", ExchangeIDType),  # 交易所代码
+
+        ("Date1", c_int),
+        ("Date2", c_int),
+        ("Time1", c_int),
+        ("Time2", c_int),
+
+        ("DataType", DataObjetType),
+        ("BarType", BarType),
+        ("BarSize", c_long),
+
+        ("RequestId", c_int),
+        ("CurrentDate", c_int),
+        ("lRequest", c_int)]
 
 
 """
@@ -673,6 +810,10 @@ ReqQryInstrumentMarginRate = RequestType(chr(26))
 
 ReqQrySettlementInfo = RequestType(chr(27))
 
+ReqQryHistoricalTicks = RequestType(chr(28))
+
+ReqQryHistoricalBars = RequestType(chr(29))
+
 ResponeType = c_char
 
 OnConnectionStatus = ResponeType(chr(64))
@@ -693,7 +834,11 @@ OnRtnOrder = ResponeType(chr(71))
 
 OnRtnTrade = ResponeType(chr(72))
 
-OnRtnQuoteRequest = ResponeType(chr(73))
+OnRtnQuote = ResponeType(chr(73))
+OnRtnQuoteRequest = ResponeType(chr(74))
+
+OnRspQryHistoricalTicks = ResponeType(chr(75))
+OnRspQryHistoricalBars = ResponeType(chr(76))
 
 # function
 fnOnRespone = WINFUNCTYPE(None, c_char, c_void_p, c_void_p, c_double, c_double, c_void_p, c_int, c_void_p, c_int,

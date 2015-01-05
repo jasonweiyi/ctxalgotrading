@@ -3,8 +3,9 @@ __author__ = 'Chunyou'
 
 from base_api.api_manager import *
 
-securitymduserapi = WinDLL(os.path.dirname(__file__) + "/include/LTS/win32/securitymduserapi.dll")
-securitytraderapi = WinDLL(os.path.dirname(__file__) + "/include/LTS/win32/securitytraderapi.dll")
+os.environ['PATH'] = ';'.join([os.path.dirname(__file__) + "\\..\\Debug",
+                               os.path.dirname(__file__) + "\\include\\LTS\\win32",
+                               os.environ['PATH']])
 
 
 class LtsMarket(object):
@@ -17,8 +18,8 @@ class LtsMarket(object):
         :param investor_id: string, investor id.
         :param password: string, investor password.
         """
-        self.api = ApiManager.create(os.path.dirname(__file__) + "/include/LTS/QuantBox_LTS_Quote.dll", local_path,
-                                     server_address, broker_id, investor_id, password)
+        self.api, self.queue = ApiManager.create("QuantBox_LTS_Quote", local_path,
+                                                 server_address, broker_id, investor_id, password)
         self.api.set_callbacks(callbacks)
 
     def __getattr__(self, item):
@@ -26,7 +27,6 @@ class LtsMarket(object):
             return getattr(self.api, item)
 
     def release(self):
-        self.api.disconnect()
         ApiManager.release(self.api)
 
 
@@ -40,8 +40,8 @@ class LtsTrader(object):
         :param investor_id: string, investor id.
         :param password: string, investor password.
         """
-        self.api = ApiManager.create(os.path.dirname(__file__) + "/include/LTS/QuantBox_LTS_Trade.dll", local_path,
-                                     server_address, broker_id, investor_id, password)
+        self.api, self.queue = ApiManager.create("QuantBox_LTS_Trade", local_path,
+                                                 server_address, broker_id, investor_id, password, is_market=False)
         self.api.set_callbacks(callbacks)
 
     def __getattr__(self, item):
@@ -49,5 +49,4 @@ class LtsTrader(object):
             return getattr(self.api, item)
 
     def release(self):
-        self.api.disconnect()
         ApiManager.release(self.api)

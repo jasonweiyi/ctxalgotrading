@@ -26,4 +26,5 @@ class Proxy(object):
                                        c_int, c_void_p, c_int]
             if self._xRequest is None:
                 return None
+        # print "Request: ", ord(request_type.value)
         return self._xRequest(request_type, p_api1, p_api2, double1, double2, ptr1, size1, ptr2, size2, ptr3, size3)
