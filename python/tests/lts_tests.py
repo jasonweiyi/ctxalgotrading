@@ -3,6 +3,7 @@ import unittest
 import time
 from base_api.callbacks import CallBacks
 from base_api.comm import *
+from logger.file_logger import FileLogger
 from lts import LtsMarket, LtsTrader
 
 __author__ = 'Chunyou'
@@ -53,7 +54,7 @@ class LtsMarketTests(unittest.TestCase):
 
     def test_depth_market_data(self):
         self.test_connect()
-        self.market.subscribe(self.instrument_ids, self.exchange_id)
+        self.market.subscribe(instrument_ids=self.instrument_ids, exchange_id=self.exchange_id)
         self.process(stop_condition=lambda: len(self.callbacks.market_data) > 10)
         self.market.unsubscribe(self.instrument_ids)
         self.assertNotEqual(len(self.callbacks.market_data), 1, msg='Get Depth Market Data Failed!')
@@ -138,7 +139,7 @@ class LtsTraderTests(unittest.TestCase):
     exchange_id = b"SSE"
 
     def setUp(self):
-        self.callbacks = LtsTraderCallbacks()
+        self.callbacks = [LtsTraderCallbacks(), FileLogger(b"C:/tmp/log")]
         self.trading = LtsTrader(b"C:/tmp/lts", b"tcp://211.144.195.163:44505", b"2011", b"020000000350",
                                  b"123321", self.callbacks)
         self.trading.connect()
@@ -146,9 +147,10 @@ class LtsTraderTests(unittest.TestCase):
 
     def tearDown(self):
         self.trading.release()
+        self.callbacks[1].flush()
 
     # 处理消息队列
-    def process(self, max_wait=60, stop_condition=lambda: False):
+    def process(self, max_wait=10, stop_condition=lambda: False):
         itr = 0
         while itr < max_wait and not stop_condition():
             if self.trading.queue.process_first_message():
@@ -163,14 +165,14 @@ class LtsTraderTests(unittest.TestCase):
     def test_get_trading_account(self):
         self.test_connect()
         self.trading.get_trading_account()
-        self.process(10, stop_condition=lambda: self.callbacks.trading_account is not None)
-        self.assertNotEqual(self.callbacks.trading_account, None, msg='Get Trading Account Failed!')
+        self.process(10, stop_condition=lambda: self.callbacks[0].trading_account is not None)
+        self.assertNotEqual(self.callbacks[0].trading_account, None, msg='Get Trading Account Failed!')
 
     def test_get_future(self):
         self.test_connect()
-        self.trading.get_instrument(self.future_ids, self.exchange_id)
-        self.process(stop_condition=lambda: self.callbacks.future_detail is not None)
-        self.assertNotEqual(self.callbacks.future_detail, None, msg='Get Future Failed!')
+        self.trading.get_instrument(future_id=self.future_ids, exchange_id=self.exchange_id)
+        self.process(stop_condition=lambda: self.callbacks[0].future_detail is not None)
+        self.assertNotEqual(self.callbacks[0].future_detail, None, msg='Get Future Failed!')
 
     def test_get_investor_position(self):
         """
@@ -178,18 +180,19 @@ class LtsTraderTests(unittest.TestCase):
         """
         self.test_connect()
         self.trading.get_trading_account()
-        self.trading.get_investor_position(self.future_ids, self.exchange_id)
-        self.process(stop_condition=lambda: self.callbacks.investor_position is not None)
-        self.assertNotEqual(self.callbacks.investor_position, None, msg='Get Investor Position info Failed!')
+        self.trading.get_investor_position(future_id=self.future_ids, exchange_id=self.exchange_id)
+        self.process(stop_condition=lambda: self.callbacks[0].investor_position is not None)
+        self.assertNotEqual(self.callbacks[0].investor_position, None, msg='Get Investor Position info Failed!')
 
     def test_order(self):
         self.test_connect()
-        order_id = self.trading.send_order(-1, self.future_ids, self.exchange_id, Limit, Day, Buy, Open,
-                                           Hedge, 1000, 19.5, 20)
+        order_id = self.trading.send_order(order_ref=-1, future_id=self.future_ids, exchange_id=self.exchange_id,
+                                           order_type=Limit, time_in_force=Day, side=Buy, open_close=Open,
+                                           hedge_flag=Hedge, qty=1000, price=19.5, stop_price=20)
         print '\nOrder Id: %s' % order_id
         self.process(
-            stop_condition=lambda: self.callbacks.order is not None and self.callbacks.order.ID == order_id)
-        self.assertNotEqual(self.callbacks.order, None, msg='Send Order Failed!')
+            stop_condition=lambda: self.callbacks[0].order is not None and self.callbacks[0].order.ID == order_id)
+        self.assertNotEqual(self.callbacks[0].order, None, msg='Send Order Failed!')
 
 
 if __name__ == '__main__':

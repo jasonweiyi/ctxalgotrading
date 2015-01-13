@@ -4,7 +4,7 @@ __author__ = 'Chunyou'
 from base_api.api_manager import *
 
 os.environ['PATH'] = ';'.join([os.path.dirname(__file__) + "\\include",
-                               os.path.dirname(__file__) + "\\include\\LTS\\win32",
+                               os.path.dirname(__file__) + "\\include\\LTS_Stock\\win32",
                                os.environ['PATH']])
 
 
@@ -24,9 +24,15 @@ class LtsMarket(object):
 
     def __getattr__(self, item):
         if self.api:
-            return getattr(self.api, item)
+            attr = getattr(self.api, item)
+
+            def wrapper(**kwargs):
+                self.api.invoke_log('on_invoke_market_%s' % item, **kwargs)
+                attr(**kwargs)
+            return wrapper if 'instancemethod' in str(type(attr)) else attr
 
     def release(self):
+        self.api.invoke_log('invoke_market_disconnect')
         ApiManager.release(self.api)
 
 
@@ -46,7 +52,13 @@ class LtsTrader(object):
 
     def __getattr__(self, item):
         if self.api:
-            return getattr(self.api, item)
+            attr = getattr(self.api, item)
+
+            def wrapper(**kwargs):
+                self.api.invoke_log('on_invoke_trading_%s' % item, **kwargs)
+                attr(**kwargs)
+            return wrapper if 'instancemethod' in str(type(attr)) else attr
 
     def release(self):
+        self.api.invoke_log('on_invoke_trading_disconnect')
         ApiManager.release(self.api)
