@@ -3,6 +3,7 @@ import os
 
 from comm import *
 from proxy import Proxy
+from api_base import AbstractApi
 
 __author__ = 'Chunyou'
 
@@ -61,6 +62,10 @@ class ApiManager(object):
     dict = {}
 
     @staticmethod
+    def create_queue():
+        return Queue(ApiManager.queue_path)
+
+    @staticmethod
     def create(path, local_path, server_address, broker_id, investor_id, password,
                user_product_info=b"", auth_code=b"", is_market=True):
         """
@@ -98,31 +103,26 @@ class ApiManager(object):
             del ApiManager.dict[api]
 
 
-class XApi(object):
+class XApi(AbstractApi):
     """
     Api 基类
     """
     proxy = None  # Proxy
     handle = None
-    _queue = None  # Queue
     _path1 = None
     _local_path = None
-    _is_market = True
 
-    is_connected = False
     _reconnectInterval = 0
     server = None  # ServerInfoField
     user = None  # UserInfoField
-    user_login_field = None  # RspUserLoginField
 
     _x_response = None
-    _callbacks = None
 
     def __init__(self, path, queue, local_path, server_address, broker_id, investor_id, password,
                  user_product_info, auth_code, is_market):
+        super(XApi, self).__init__(path, queue, local_path, server_address, broker_id, investor_id, password,
+                             user_product_info, auth_code, is_market)
         self._path1 = path
-        self._queue = queue
-        self._is_market = is_market
         self._local_path = local_path
         self._x_response = fnOnRespone(self._on_response)
         self._reconnectInterval = 0
@@ -136,11 +136,6 @@ class XApi(object):
         self.user = UserInfoField()
         self.user.UserID = investor_id
         self.user.Password = password
-
-    def set_callbacks(self, callbacks):
-        if not isinstance(callbacks, list):
-            callbacks = [callbacks]
-        self._callbacks = callbacks
 
     def connect(self):
         """
@@ -270,79 +265,3 @@ class XApi(object):
         self.proxy.x_request(ReqQryInstrument, self.handle,
                              ptr1=b','.join(future_id) if isinstance(future_id, list) else future_id,
                              ptr2=exchange_id)
-
-    def _on_response(self, response_type, p_api1, p_api2, double1, double2, ptr1, size1, ptr2, size2, ptr3, size3):
-        """
-        callback from the queue
-        :param response_type:
-        :param p_api1:
-        :param p_api2:
-        :param double1:
-        :param double2:
-        :param ptr1:
-        :param size1:
-        :param ptr2:
-        :param size2:
-        :param ptr3:
-        :param size3:
-        :return:
-        """
-        print "Response: ", ord(response_type)
-        if response_type == OnConnectionStatus.value:
-            self._on_connect_status(p_api2, chr(int(double1)), ptr1, size1)
-        elif self._callbacks:
-            for callback in self._callbacks:
-                if response_type == OnRtnDepthMarketData.value:
-                    obj = cast(ptr1, POINTER(DepthMarketDataField)).contents
-                    if self._is_market:
-                        callback.on_market_rtn_depth_market_data(p_api2, obj)
-                elif response_type == OnRspQryInstrument.value:
-                    obj = cast(ptr1, POINTER(InstrumentField)).contents
-                    callback.on_trading_rsp_qry_instrument(p_api2, obj, bool(double1))
-                elif response_type == OnRspQryTradingAccount.value:
-                    obj = cast(ptr1, POINTER(AccountField)).contents
-                    callback.on_trading_rsp_qry_trading_account(p_api2, obj, bool(double1))
-                elif response_type == OnRspQryInvestorPosition.value:
-                    obj = cast(ptr1, POINTER(PositionField)).contents
-                    callback.on_trading_rsp_qry_investor_position(p_api2, obj, bool(double1))
-                elif response_type == OnRtnOrder.value:
-                    obj = cast(ptr1, POINTER(OrderField)).contents
-                    callback.on_trading_rtn_order(p_api2, obj)
-                elif response_type == OnRtnTrade.value:
-                    obj = cast(ptr1, POINTER(TradeField)).contents
-                    callback.on_trading_rtn_trade(p_api2, obj)
-                elif response_type == OnRtnError.value:
-                    obj = cast(ptr1, POINTER(ErrorField)).contents
-                    if self._is_market:
-                        callback.on_market_rsp_error(p_api2, obj, bool(double1))
-                    else:
-                        callback.on_trading_rsp_error(p_api2, obj, bool(double1))
-
-    def _on_connect_status(self, p_api, status, p_user_login_field, size):
-        """
-        callback on connect status
-        :param p_api: int
-        :param status:
-        :param p_user_login_field: POINT of RspUserLoginField
-        :return:
-        """
-        # 连接状态更新
-        self.is_connected = Done.value == status
-
-        obj = RspUserLoginField()
-
-        if status in [Logined.value, Disconnected.value, Doing.value] and size > 0:
-            obj = cast(p_user_login_field, POINTER(RspUserLoginField)).contents
-            self.user_login_field = obj
-
-        if self._callbacks:
-            for callback in self._callbacks:
-                if self._is_market:
-                    callback.on_market_connected(p_api, obj, status)
-                else:
-                    callback.on_trading_connected(p_api, obj, status)
-
-    def invoke_log(self, func_name, **kwargs):
-        for callback in self._callbacks:
-            if getattr(callback, func_name, None):
-                getattr(callback, func_name)(kwargs)
